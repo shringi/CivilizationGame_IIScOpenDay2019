@@ -1,5 +1,19 @@
 require("rootSolve")
 
+#----- Commands -----------------------------------------------------------------------
+# P/F <--- Politician / Farmer
+# P a/x  <--- x = do nothing, a = allocate area
+# P a XX YY xx <--- take xx% of total area from XX and add it to YY
+#     XX/YY : F = forest, f = farm, c = city, i = industry
+# 
+# F f/p/m xx
+#   f xx <---- set fulfilment to xx %
+#   p xx <---- set fertilizer usage to xx
+#   m xx <---- xx % of farmers migrate to city (negative means xx % migrate from city)
+#-------------------------------------------------------------------------------------
+
+# CHECK THE functional forms f(). Refer section headings
+
 
 # ======== PARAMETERS =============
 A.tot = 900   # hct
@@ -41,9 +55,14 @@ if (sum(world.areas) != 1) cat("Areas dont add up")
 
 for (t in 1:100){
 
-  farmer.fulfillment = 1
+  # =========== default values ==============
+
+    farmer.fulfillment = 1
   fert.usage = 10  # kg/yr/hct
+  N.farmers = 1000
+  N.city = 2000
   
+  # ============== input decisions ================
   cmd_pol  = readline(prompt=">> ")
   
   if (cmd_pol != ""){
@@ -51,9 +70,9 @@ for (t in 1:100){
     agent = cmd_vec[1]
     command = cmd_vec[2]
     
-    if (agent == "P"){
-      if (command == "a"){
-        from = cmd_vec[3]
+    if (agent == "P"){        #          v-------- area added to 
+      if (command == "a"){    # >> P a F i 20  --- what % of total area <--- take 20% of total area from Forest and add it to industry
+        from = cmd_vec[3]     #        ^----- area taken from 
         to = cmd_vec[4]
         amt = min(as.numeric(cmd_vec[5])/100*sum(world.areas), world.areas[from])
         world.areas[from] = world.areas[from] - amt
@@ -62,11 +81,16 @@ for (t in 1:100){
       else if (command == "x"){}
     }
     else if (agent == "F"){
-      if (command == "f"){
+      if (command == "f"){    # >> F f xx    --- Farmer retains only xx % of his own food requirement   
         farmer.fulfillment = as.numeric(cmd_vec[3])
       }
-      if (command == "p"){
+      if (command == "p"){    # >> F p xx   --- Farmer decides to used xx kg/hct of fertilizer. Default is 10
         fert.usage = as.numeric(cmd_vec[3])
+      }
+      if (command == "m"){    # >> F m xx   --- xx % of farmers migrate to city. negative means xx percent migrate FROM cities
+        migrants = round(N.farmers*as.numeric(cmd_vec[3])/100)
+        N.farmers = N.farmers - migrants
+        N.city    = N.city    + migrants
       }
     }
   }  
@@ -79,8 +103,6 @@ for (t in 1:100){
   A.city   = world.areas[3]*A.tot
   A.ind    = world.areas[4]*A.tot
 
-  N.farmers = 1000
-  N.city = 2000
   demand.food_0   = (N.city)*K.food_cons_pc   # Kg
   
   # ==================  FARM SECTOR DYNAMICS  =========================
@@ -97,7 +119,7 @@ for (t in 1:100){
   invest.farmer  = (A.farm/N.farmers)*fert.usage*K.fert_price  # per cap cost to farmers
   inc.farmer = revenue.farmer - invest.farmer  
   satiety.farmer = cons.food_pc_farmer/K.food_cons_pc
-  hdi.farmer =  satiety.farmer * inc.farmer /2000 # HDI of farmer
+  hdi.farmer =  satiety.farmer * inc.farmer /2000 ##### HDI of farmer = f(satiety, income) ####
   
   # ==================  CITY SECTOR DYNAMCIS  =========================
   
@@ -107,7 +129,7 @@ for (t in 1:100){
   inc.city = revenue.city - cost.city  # city income proportional to per capita industrial area 
   health.city = (A.forest/A.ind)*(A.city/N.city) # health prop to forest area, inv prop to pollution, inv prop to crowding (human density)
   satiety.city = cons.food_pc/K.food_cons_pc
-  hdi.city =  satiety.city * inc.city * health.city/0.225/2000  # HDI of city
+  hdi.city =  satiety.city * inc.city * health.city/0.225/2000  ####  HDI of city  = f(satiety, income, health) #####
   
   # ==================  POLITICAL SECTOR DYNAMICS  =========================
   
