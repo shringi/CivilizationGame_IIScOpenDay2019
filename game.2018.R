@@ -36,8 +36,8 @@ labels = c("F", "f", "c", "i")
 names(world.areas) = labels
 if (sum(world.areas) != 1) cat("Areas dont add up")
 
-# ===== Farmer decisions ======
 
+# ===== Farmer decisions ======
 
 for (t in 1:100){
 
@@ -46,29 +46,30 @@ for (t in 1:100){
   
   cmd_pol  = readline(prompt=">> ")
   
-  cmd_vec = strsplit(cmd_pol, split = " ")[[1]]
-  agent = cmd_vec[1]
-  command = cmd_vec[2]
-  
-  if (agent == "P"){
-    if (command == "a"){
-      from = cmd_vec[3]
-      to = cmd_vec[4]
-      amt = min(as.numeric(cmd_vec[5])/100*sum(world.areas), world.areas[from])
-      world.areas[from] = world.areas[from] - amt
-      world.areas[to]   = world.areas[to]   + amt
+  if (cmd_pol != ""){
+    cmd_vec = strsplit(cmd_pol, split = " ")[[1]]
+    agent = cmd_vec[1]
+    command = cmd_vec[2]
+    
+    if (agent == "P"){
+      if (command == "a"){
+        from = cmd_vec[3]
+        to = cmd_vec[4]
+        amt = min(as.numeric(cmd_vec[5])/100*sum(world.areas), world.areas[from])
+        world.areas[from] = world.areas[from] - amt
+        world.areas[to]   = world.areas[to]   + amt
+      }
+      else if (command == "x"){}
     }
-    else if (command == "x"){}
-  }
-  else if (agent == "F"){
-    if (command == "f"){
-      farmer.fulfillment = as.numeric(cmd_vec[3])
+    else if (agent == "F"){
+      if (command == "f"){
+        farmer.fulfillment = as.numeric(cmd_vec[3])
+      }
+      if (command == "p"){
+        fert.usage = as.numeric(cmd_vec[3])
+      }
     }
-    if (command == "p"){
-      fert.usage = as.numeric(cmd_vec[3])
-    }
-  }
-  
+  }  
   
   
   # ================= COUNTRY AND PEOPLE ==================
