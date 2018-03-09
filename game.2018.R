@@ -15,8 +15,13 @@ require("rootSolve")
 # CHECK THE functional forms f(). Refer section headings
 
 
+
 # ======== PARAMETERS =============
 A.tot = 900   # hct
+N.farmers = 1000
+N.city = 2000
+farmer.fulfillment = 1
+fert.usage = 10  # kg/yr/hct
 
 K.fert_price = 100  # Rs/kg 
 K.food_cons_pc = 200/1000*365    # Kg/yr (xx grams/day * 365 days)
@@ -55,13 +60,6 @@ if (sum(world.areas) != 1) cat("Areas dont add up")
 
 for (t in 1:100){
 
-  # =========== default values ==============
-
-    farmer.fulfillment = 1
-  fert.usage = 10  # kg/yr/hct
-  N.farmers = 1000
-  N.city = 2000
-  
   # ============== input decisions ================
   cmd_pol  = readline(prompt=">> ")
   
