@@ -153,7 +153,7 @@ for (t in 2:Ts){
   # ================= PLOTS ============================
   
   layout(rbind(c(1,1,2,3),c(4,5,6,7)))
-  par(cex.lab=1, cex=1)
+  par(cex.lab=1.2, cex=1.2)
   
   world = matrix(data = rep(c(1,2,3,4), c(round(A.forest), round(A.farm), round(A.city), round(A.ind))), 
                  nrow=30, 
@@ -176,7 +176,10 @@ for (t in 2:Ts){
     if (value != 0) points(x=x,y=y, pch=pch1, col=col1, cex=cex)
   }
   
-  plot_supply_demand()
+#  plot_supply_demand()
+  barplot(rbind(c(sold.food, sold.food), c(demand.food_0-sold.food, supply.food_max-sold.food))/1000, main="Food Production", names.arg = c("demand", "supply"), ylab = "Quantity (tons)", ylim=c(0,150))
+  
+
   barplot(c(N.city, N.farmers), main="Population", names.arg = c("city", "farm"), ylim=c(0,3000))
   citypopchange=(dat$N.city[nrow(dat)] - dat$N.city[nrow(dat)-1])/dat$N.city[nrow(dat)-1]*100
   farmerpopchange=(dat$N.farmers[nrow(dat)] - dat$N.farmers[nrow(dat)-1])/dat$N.farmers[nrow(dat)-1]*100
