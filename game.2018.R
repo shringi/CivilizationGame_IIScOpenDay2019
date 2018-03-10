@@ -170,15 +170,11 @@ for (t in 2:Ts){
     }
     else {
       pch1 = -9650 # <-- inc
-      col1 = "green3"
+      col1 = "green4"
     }
     cex = 1+abs(value)/70
     if (value != 0) points(x=x,y=y, pch=pch1, col=col1, cex=cex)
   }
-  
-#  plot_supply_demand()
-  barplot(rbind(c(sold.food, sold.food), c(demand.food_0-sold.food, supply.food_max-sold.food))/1000, main="Food Production", names.arg = c("demand", "supply"), ylab = "Quantity (tons)", ylim=c(0,150))
-  
 
   barplot(c(N.city, N.farmers), main="Population", names.arg = c("city", "farm"), ylim=c(0,3000))
   citypopchange=(dat$N.city[nrow(dat)] - dat$N.city[nrow(dat)-1])/dat$N.city[nrow(dat)-1]*100
@@ -186,28 +182,37 @@ for (t in 2:Ts){
   plotArrow(x=0.7,y=2800, citypopchange)
   plotArrow(x=1.9,y=2800, farmerpopchange)
   
+#  plot_supply_demand()
+  barplot(rbind(c(sold.food, sold.food), c(demand.food_0-sold.food, supply.food_max-sold.food))/1000, main="Food Production", names.arg = c("demand", "supply"), ylab = "Quantity (tons)", ylim=c(0,150))
+  sold.food.change=(dat$sold.food[nrow(dat)] - dat$sold.food[nrow(dat)-1])/dat$sold.food[nrow(dat)-1]*100
+  plotArrow(x=0.7,y=148, sold.food.change)
+  plotArrow(x=1.9,y=148, sold.food.change)
+
+  barplot(price.food, main="Food\nPrice", ylim=c(0,100), names.arg = "")
+  price_change=(dat$price.food[nrow(dat)] - dat$price.food[nrow(dat)-1])/dat$price.food[nrow(dat)-1]*100
+  plotArrow(x=0.7,y=95,price_change)
+  
   barplot(rbind(c(inc.city, inc.farmer), c(cost.city, invest.farmer)), main="Income", names.arg = c("city", "farm"), ylim=c(0,8000))
   inc_citychange=(dat$inc.city[nrow(dat)] - dat$inc.city[nrow(dat)-1])/dat$inc.city[nrow(dat)-1]*100
   inc_farmchange=(dat$inc.farmer[nrow(dat)] - dat$inc.farmer[nrow(dat)-1])/dat$inc.farmer[nrow(dat)-1]*100
   plotArrow(x=0.7,y=7000,inc_citychange)
   plotArrow(x=1.9,y=7000,inc_farmchange)
-  
+
   barplot(rbind(c(satiety.city, satiety.farmer)), main="Nutrition", names.arg = c("city", "farm"), ylim = c(0,1), border=F)
   satiety_citychange=(dat$satiety.city[nrow(dat)] - dat$satiety.city[nrow(dat)-1])/dat$satiety.city[nrow(dat)-1]*100
   satiety_farmerchange=(dat$satiety.farmer[nrow(dat)] - dat$satiety.farmer[nrow(dat)-1])/dat$satiety.farmer[nrow(dat)-1]*100
   plotArrow(x=0.7,y=0.95,satiety_citychange)
   plotArrow(x=1.9,y=0.95,satiety_farmerchange)
   
-  barplot(rbind(c(hdi.city, hdi.farmer)), main="Happiness", names.arg = c("city", "farm"), ylim=c(0,1))
+  barplot(rbind(c(hdi.city, hdi.farmer, polit.popularity)), main="Happiness", names.arg = c("city", "farm", "polit"), ylim=c(0,1))
   hdi_citychange=(dat$hdi.city[nrow(dat)] - dat$hdi.city[nrow(dat)-1])/dat$hdi.city[nrow(dat)-1]*100
   hdi_farmerchange=(dat$hdi.farmer[nrow(dat)] - dat$hdi.farmer[nrow(dat)-1])/dat$hdi.farmer[nrow(dat)-1]*100
+  polit_change=(dat$polit.popularity[nrow(dat)] - dat$polit.popularity[nrow(dat)-1])/dat$polit.popularity[nrow(dat)-1]*100
   
   plotArrow(x=0.7,y=0.95,hdi_citychange)
   plotArrow(x=1.9,y=0.95,hdi_farmerchange)
+  plotArrow(x=3.1,y=0.95,polit_change)
   
-  barplot(polit.popularity*100, main="Politician's\nPopularity", ylim=c(0,100), names.arg = "")
-  polit_change=(dat$polit.popularity[nrow(dat)] - dat$polit.popularity[nrow(dat)-1])/dat$polit.popularity[nrow(dat)-1]*100
-  plotArrow(x=0.7,y=95,polit_change)
   
 }
 
