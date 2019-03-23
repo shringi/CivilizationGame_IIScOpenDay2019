@@ -1,5 +1,5 @@
 require("rootSolve")
-
+rm(list = ls())
 #----- Commands -----------------------------------------------------------------------
 # P/F <--- Politician / Farmer
 # P a/x  <--- x = do nothing, a = allocate area
@@ -13,9 +13,13 @@ require("rootSolve")
 #-------------------------------------------------------------------------------------
 
 # CHECK THE functional forms f(). Refer section headings
-
-sigmoid = function(x,a){
+# Sigmoid function --------------------------------------------------------
+sigmoid = function(x, a){
   1/(1 + exp(-a*x))
+}
+# Saturating exponential function -----------------------------------------
+sat.exp = function(x, k){
+  1 - exp(-x*k)
 }
 
 # ======== PARAMETERS =============
@@ -33,37 +37,29 @@ K.demand_elast = 100
 K.supply_elast = 20
 K.rev_industry = 100000
 K.fert_effectiveness = 1/15
-
-plot_supply_demand = function(){
-  x = seq(1,200,0.1)
-  plot(y = supply.food_max*(1-exp(-x/K.supply_elast))/1000,
-       x = x,
-       type = "l",
-       ylim = c(0, max(supply.food_max, demand.food_0))/1000,
-       xlab = "Price (Rs/Kg)",
-       ylab = "Quantity (tons)",
-       main = "Food S&D")
-  points(y = demand.food_0*exp(-x/K.demand_elast)/1000,
-         x = x,
-         type = "l",
-         col = "blue")
-  abline(v = price.food, col="grey")
-}
+fert.usage.per = 0
+M.hdi.city = 0.5/0.5513588;
+M.hdi.farmer = 0.5/0.1603679
+t.drought = 0
 
 world.areas = c(0.25, .45, 0.2, 0.1)
 labels = c("F", "f", "c", "i")
 names(world.areas) = labels
 if (sum(world.areas) != 1) cat("Areas dont add up")
 
-dat = data.frame(A.forest = 0, A.farm = 0, A.city = 0, A.ind = 0, # Area
-                 demand.food_0 = 0, produce.farm = 0, food.surplus = 0, price.food = 0, sold.food = 0, # Food
-                 N.city = 0, N.farmers = 0, # Population
+dat = data.frame(time = 1,
+                 A.forest = 0, A.farm = 0, A.city = 0, A.ind = 0, # Area
+                 demand.food_0 = 0, produce.farm = 0, food.surplus = 0, supply.food_max = 0, price.food = 0, sold.food = 0,t.drought, # Food
+                 N.city = N.city, N.farmers = N.farmers, # Population
                  revenue.city = 0, revenue.farmer = 0, inc.city = 0, inc.farmer = 0, # Finance
-                 satiety.city = 0, satiety.farmer = 0, hdi.city = 0, hdi.farmer = 0, polit.popularity = 0) # Social
+                 satiety.city = 0, satiety.farmer = 0, hdi.city = 0.5, hdi.farmer = 0.5, polit.popularity = 0.5) # Social
 Ts = 500
 
 for (t in 2:Ts) {
+  N.city = dat$N.city[t - 1]
+  N.farmers = dat$N.farmers[t - 1]
   if (t > 2) {
+    time = t
     # ============== input decisions ================
     cmd_pol  = readline(prompt = ">> ")
     if (cmd_pol != "") {
@@ -83,10 +79,12 @@ for (t in 2:Ts) {
       }
       else if (agent == "F") {
         if (command == "f") {    # >> F f xx    --- Farmer retains only xx % of his own food requirement
-          farmer.fulfillment = as.numeric(cmd_vec[3])
+          farmer.fulfillment.per = as.numeric(cmd_vec[3])
+          farmer.fulfillment = farmer.fulfillment*(1 + (farmer.fulfillment.per/100))
         }
         if (command == "p") {    # >> F p xx   --- Farmer decides to used xx kg/hct of fertilizer. Default is 10
-          fert.usage = as.numeric(cmd_vec[3])
+          fert.usage.per = as.numeric(cmd_vec[3])
+          fert.usage = fert.usage*(1 + (fert.usage.per/100))
         }
         if (command == "m") {    # >> F m xx   --- xx % of farmers migrate to city. negative means xx percent migrate FROM cities
           migrants = round(N.farmers*as.numeric(cmd_vec[3])/100)
@@ -98,7 +96,7 @@ for (t in 2:Ts) {
   }
 
   # ================= COUNTRY AND PEOPLE ==================
-
+  time = t
   A.forest = world.areas[1]*A.tot
   A.farm   = world.areas[2]*A.tot
   A.city   = world.areas[3]*A.tot
@@ -107,57 +105,62 @@ for (t in 2:Ts) {
   demand.food_0   = (N.city)*K.food_cons_pc   # Kg
 
   # ================== DROUGHT DYNAMICS ===============================
-  p.drought = 0.4*sigmoid(A.forest/A.tot - 0.15, -20)  ##### p_drought = f(forest area) TODO: introduce lag #####
+  p.drought = 1*sigmoid(A.forest/A.tot - 0.15, -20)  ##### p_drought = f(forest area) TODO: introduce lag #####
   b.drought = rbinom(n = 1, size = 1, prob = p.drought)
+  t.drought = ifelse(b.drought == 1, t, 0)
   # cat(p.drought)
 
   # ==================  FARM SECTOR DYNAMICS  =========================
 
-  yield.farm = K.farm_yield_0*2*(1 - exp(-fert.usage*K.fert_effectiveness))  #### farm yield = f(fert usage) ####
+  yield.farm = K.farm_yield_0*2*sat.exp(fert.usage, K.fert_effectiveness)*(1 - runif(1,0.1,.5)*b.drought)  #### farm yield = f(fert usage) ####
   cons.food_pc_farmer = K.food_cons_pc*farmer.fulfillment #### farmer cons = f(city demand, yield)  ####
   produce.farm = yield.farm*A.farm
   food.surplus = produce.farm - N.farmers*cons.food_pc_farmer  # total produce from all farm area (Kg) minus consumption by farmers
-  supply.food_max = max(0, food.surplus)
+  supply.food_max = max(0.1, food.surplus)
 
   price.food = multiroot(f = function(x){
-    supply.food_max*(1 - exp(-x/K.supply_elast)) - demand.food_0*(exp(-x/K.demand_elast))
+    supply.food_max*sat.exp(x, 1/K.supply_elast) - demand.food_0*(exp(-x/K.demand_elast))
     }, start = 0)$root   #### Market determined food price ####
-  sold.food = supply.food_max*(1 - exp(-price.food/K.supply_elast))  # Total produce sold
+
+  sold.food = supply.food_max*sat.exp(price.food, 1/K.supply_elast)  # Total produce sold
   revenue.farmer = sold.food/N.farmers*price.food   # per cap revenue of farmers
   invest.farmer  = (A.farm/N.farmers)*fert.usage*K.fert_price  # per cap cost to farmers
   inc.farmer = revenue.farmer - invest.farmer
   satiety.farmer = min(cons.food_pc_farmer/K.food_cons_pc, 1)
-  hdi.farmer =  sigmoid(satiety.farmer - 0.2, 5) * sigmoid(inc.farmer - 3000, .001)  ##### HDI of farmer = f(satiety, income) ####
+  hdi.farmer =  M.hdi.farmer*sigmoid(satiety.farmer - 0.2, 5) * sigmoid(inc.farmer - 3000, .001)  ##### HDI of farmer = f(satiety, income) ####
 
   # ==================  CITY SECTOR DYNAMCIS  =========================
 
-  cons.food_pc = supply.food_max*(1 - exp(-price.food/K.supply_elast))/N.city # food consumption per cap
+  cons.food_pc = supply.food_max*sat.exp(price.food, 1/K.supply_elast)/N.city # food consumption per cap
   revenue.city = A.ind/N.city * K.rev_industry
   cost.city = cons.food_pc*price.food
   inc.city = revenue.city - cost.city  # city income proportional to per capita industrial area
   health.city = A.forest/A.ind
   crowding.city = A.city/N.city # health prop to forest area, inv prop to pollution, inv prop to crowding (human density)
   satiety.city = cons.food_pc/K.food_cons_pc
-  hdi.city =  sigmoid(satiety.city - 0.2, 5) * sigmoid(inc.city - 3000, .001) * sigmoid(crowding.city - 0.05,20)   ####  HDI of city  = f(satiety, income, health) #####
+  hdi.city =  M.hdi.city*sigmoid(satiety.city - 0.2, 5) * sigmoid(inc.city - 3000, .001) * sigmoid(crowding.city - 0.05,20)   ####  HDI of city  = f(satiety, income, health) #####
 
   # ==================  POLITICAL SECTOR DYNAMICS  =========================
 
   tax.collection =  inc.city*N.city*0.20 + inc.farmer*N.farmers*0.05
-  polit.popularity = sigmoid(hdi.city*hdi.farmer - 0.2, 10)
+  polit.popularity = sigmoid(hdi.city*hdi.farmer - 0.25, 10)
   country = matrix(nrow = 100, ncol = 100, data = 0)
 
   # ================= Append to dataframe ==============
-  dat1 = c(A.forest, A.farm, A.city, A.ind,
-           demand.food_0, produce.farm, food.surplus, price.food, sold.food,
+  dat1 = c(time,
+           A.forest, A.farm, A.city, A.ind,
+           demand.food_0, produce.farm, food.surplus, supply.food_max, price.food, sold.food,t.drought,
            N.city, N.farmers,
            revenue.city, revenue.farmer, inc.city, inc.farmer,
            satiety.city, satiety.farmer, hdi.city, hdi.farmer, polit.popularity)
   dat[t,] = dat1
+  dat$N.city[t] = (2^(hdi.city - 0.5))*dat$N.city[t - 1]
+  dat$N.farmers[t] = (2^(hdi.farmer - 0.5))*dat$N.farmers[t - 1]
   # ================= PLOTS ============================
 
-  layout(rbind(c(1, 1, 2, 3), c(4, 5, 6, 7)))
+  layout(rbind(c(1, 1, 2, 3), c(4, 4, 5, 6), c(7, 8, 9, 10), c(11, 12, 13, 14)))
   par(cex.lab = 1.2, cex = 1.2)
-
+  par(mar = c(2,2,2,2))
   world = matrix(data = rep(c(1, 2, 3, 4), c(round(A.forest), round(A.farm), round(A.city), round(A.ind))),
                  nrow = 30,
                  byrow = F)
@@ -174,7 +177,7 @@ for (t in 2:Ts) {
       pch1 = -9650 # <-- inc
       col1 = "green4"
     }
-    cex = 1 + abs(value)/70
+    cex = 1 #+ abs(value)/70
     if (value != 0) points(x = x, y = y, pch = pch1, col = col1, cex = cex)
   }
 
@@ -183,6 +186,9 @@ for (t in 2:Ts) {
   farmerpopchange = (dat$N.farmers[nrow(dat)] - dat$N.farmers[nrow(dat) - 1])/dat$N.farmers[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 2800, citypopchange)
   plotArrow(x = 1.9, y = 2800, farmerpopchange)
+
+
+
 
 #  plot_supply_demand()
   barplot(rbind(c(sold.food, sold.food),
@@ -193,7 +199,25 @@ for (t in 2:Ts) {
   plotArrow(x = 0.7, y = 148, sold.food.change)
   plotArrow(x = 1.9, y = 148, sold.food.change)
 
-  barplot(price.food, main = "Food\nPrice", ylim = c(0,100), names.arg = "")
+  # Trend -------------------------------------------------------------------
+  plot(dat$A.farm ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  abline(v = dat$t.drought, col = "red")
+  points(dat$A.forest ~ dat$time, xlim = c(2,30), pch = 19, col = "green4", type = "o")
+
+  points(dat$A.city ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
+  points(dat$A.ind ~ dat$time, xlim = c(2,30), pch = 19, col = "red", type = "o")
+
+  plot(dat$N.city ~ dat$time, xlim = c(2,30), ylim = c(500,2500), pch = 19, col = "grey", type = "o")
+  points(dat$N.farmers ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+
+  plot(dat$demand.food_0 ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
+  points(dat$supply.food_max ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+
+
+# 2nd Row -----------------------------------------------------------------
+
+
+  barplot(price.food, main = "Food Price", ylim = c(0,100), names.arg = "")
   price_change = (dat$price.food[nrow(dat)] - dat$price.food[nrow(dat) - 1])/dat$price.food[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 95, price_change)
 
@@ -209,15 +233,33 @@ for (t in 2:Ts) {
   plotArrow(x = 0.7, y = 0.95, satiety_citychange)
   plotArrow(x = 1.9, y = 0.95, satiety_farmerchange)
 
-  barplot(rbind(c(hdi.city, hdi.farmer, polit.popularity)),
-          main = "Happiness", names.arg = c("city", "farm", "polit"), ylim = c(0,1))
+  col.sch = c(ifelse(hdi.city < 0.5, "red", "green"),
+              ifelse(hdi.farmer < 0.5, "red", "green"),
+              ifelse(polit.popularity < 0.5, "red", "green"))
+
+  barplot(c(hdi.city, hdi.farmer, polit.popularity),
+          main = "Happiness", names.arg = c("city", "farm", "polit"), ylim = c(0,1),
+          col = col.sch)
   hdi_citychange = (dat$hdi.city[nrow(dat)] - dat$hdi.city[nrow(dat) - 1])/dat$hdi.city[nrow(dat) - 1]*100
   hdi_farmerchange = (dat$hdi.farmer[nrow(dat)] - dat$hdi.farmer[nrow(dat) - 1])/dat$hdi.farmer[nrow(dat) - 1]*100
   polit_change = (dat$polit.popularity[nrow(dat)] - dat$polit.popularity[nrow(dat) - 1])/dat$polit.popularity[nrow(dat) - 1]*100
-
+abline(h = .5, col = "red")
   plotArrow(x = 0.7, y = 0.95, hdi_citychange)
   plotArrow(x = 1.9, y = 0.95, hdi_farmerchange)
   plotArrow(x = 3.1, y = 0.95, polit_change)
+
+  plot(dat$price.food ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
+
+  plot(dat$inc.city ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
+  points(dat$inc.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+
+  plot(dat$satiety.city ~ dat$time, xlim = c(2,30), ylim = c(0,1), pch = 19, col = "grey", type = "o")
+  points(dat$satiety.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+
+  plot(dat$hdi.city ~ dat$time, xlim = c(2,30), ylim = c(0,1), pch = 19, col = "grey", type = "o")
+  points(dat$hdi.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  points(dat$polit.popularity ~ dat$time, xlim = c(2,30), pch = 19, col = "red", type = "o")
 }
+
 
 # TODO: code disasters wth 10 round lag proportional to forest area
