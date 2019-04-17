@@ -11,7 +11,6 @@ rm(list = ls())
 #   p xx <---- set fertilizer usage to xx
 #   m xx <---- xx % of farmers migrate to city (negative means xx % migrate from city)
 #-------------------------------------------------------------------------------------
-
 # CHECK THE functional forms f(). Refer section headings
 # Sigmoid function --------------------------------------------------------
 sigmoid = function(x, a){
@@ -21,7 +20,6 @@ sigmoid = function(x, a){
 sat.exp = function(x, k){
   1 - exp(-x*k)
 }
-
 # ======== PARAMETERS =============
 A.tot = 900   # hct
 N.farmers = 1500
@@ -167,7 +165,7 @@ for (t in 2:Ts) {
   b = (which(diff(c(-1,world[1,],10)) > 0)) - 1
   image(t(world), xaxt = "n", yaxt = "n", main = "World Area",
         col = c("green4", "lightgreen", "grey", "red"))
-  axis(side = 1, at = (b[-length(b)] + diff(b)/2)/30, labels = c("Forest", "Farm", "City", "Ind"))
+  axis(side = 1, at = (b[-length(b)] + diff(b)/2)/20, labels = c("Forest", "Farm", "City", "Ind"))
 
   plotArrow = function(x,y,value){
     if (value < 0) {
@@ -181,14 +179,12 @@ for (t in 2:Ts) {
     if (value != 0) points(x = x, y = y, pch = pch1, col = col1, cex = cex)
   }
 
-  barplot(c(N.city, N.farmers), main = "Population", names.arg = c("city", "farm"), ylim = c(0,3000))
+  barplot(c(N.city, N.farmers), main = "Population", names.arg = c("city", "farm"), ylim = c(0,3000),
+          col = c("black","blue"))
   citypopchange = (dat$N.city[nrow(dat)] - dat$N.city[nrow(dat) - 1])/dat$N.city[nrow(dat) - 1]*100
   farmerpopchange = (dat$N.farmers[nrow(dat)] - dat$N.farmers[nrow(dat) - 1])/dat$N.farmers[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 2800, citypopchange)
   plotArrow(x = 1.9, y = 2800, farmerpopchange)
-
-
-
 
 #  plot_supply_demand()
   barplot(rbind(c(sold.food, sold.food),
@@ -200,34 +196,31 @@ for (t in 2:Ts) {
   plotArrow(x = 1.9, y = 148, sold.food.change)
 
   # Trend -------------------------------------------------------------------
-  plot(dat$A.farm ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  plot(dat$A.farm ~ dat$time, xlim = c(2,20), pch = 19, col = "lightgreen", type = "o")
   abline(v = dat$t.drought, col = "red")
-  points(dat$A.forest ~ dat$time, xlim = c(2,30), pch = 19, col = "green4", type = "o")
+  points(dat$A.forest ~ dat$time, xlim = c(2,20), pch = 19, col = "green4", type = "o")
 
-  points(dat$A.city ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
-  points(dat$A.ind ~ dat$time, xlim = c(2,30), pch = 19, col = "red", type = "o")
+  points(dat$A.city ~ dat$time, xlim = c(2,20), pch = 19, col = "black", type = "o")
+  points(dat$A.ind ~ dat$time, xlim = c(2,20), pch = 19, col = "red", type = "o")
 
-  plot(dat$N.city ~ dat$time, xlim = c(2,30), ylim = c(500,2500), pch = 19, col = "grey", type = "o")
-  points(dat$N.farmers ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  plot(dat$N.city ~ dat$time, xlim = c(2,20), ylim = c(500,2500), pch = 19, col = "black", type = "o")
+  points(dat$N.farmers ~ dat$time, xlim = c(2,20), pch = 19, col = "blue", type = "o")
 
-  plot(dat$demand.food_0 ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
-  points(dat$supply.food_max ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
-
+  plot(dat$demand.food_0 ~ dat$time, xlim = c(2,20), pch = 19, col = "black", type = "o")
+  points(dat$supply.food_max ~ dat$time, xlim = c(2,20), pch = 19, col = "blue", type = "o")
 
 # 2nd Row -----------------------------------------------------------------
-
-
   barplot(price.food, main = "Food Price", ylim = c(0,100), names.arg = "")
   price_change = (dat$price.food[nrow(dat)] - dat$price.food[nrow(dat) - 1])/dat$price.food[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 95, price_change)
 
-  barplot(rbind(c(inc.city, inc.farmer), c(cost.city, invest.farmer)), main = "Income", names.arg = c("city", "farm"), ylim = c(0, 8000))
+  barplot(rbind(c(inc.city, inc.farmer), c(cost.city, invest.farmer)), main = "Income", names.arg = c("city", "farm"), ylim = c(0, 8000), col = c("black","blue"))
   inc_citychange = (dat$inc.city[nrow(dat)] - dat$inc.city[nrow(dat) - 1])/dat$inc.city[nrow(dat) - 1]*100
   inc_farmchange = (dat$inc.farmer[nrow(dat)] - dat$inc.farmer[nrow(dat) - 1])/dat$inc.farmer[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 7000, inc_citychange)
   plotArrow(x = 1.9, y = 7000, inc_farmchange)
 
-  barplot(rbind(c(satiety.city, satiety.farmer)), main = "Nutrition", names.arg = c("city", "farm"), ylim = c(0,1), border = F)
+  barplot(rbind(c(satiety.city, satiety.farmer)), main = "Nutrition", names.arg = c("city", "farm"), ylim = c(0,1),col = c("black","blue"), border = F)
   satiety_citychange = (dat$satiety.city[nrow(dat)] - dat$satiety.city[nrow(dat) - 1])/dat$satiety.city[nrow(dat) - 1]*100
   satiety_farmerchange = (dat$satiety.farmer[nrow(dat)] - dat$satiety.farmer[nrow(dat) - 1])/dat$satiety.farmer[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 0.95, satiety_citychange)
@@ -248,18 +241,17 @@ abline(h = .5, col = "red")
   plotArrow(x = 1.9, y = 0.95, hdi_farmerchange)
   plotArrow(x = 3.1, y = 0.95, polit_change)
 
-  plot(dat$price.food ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
+  plot(dat$price.food ~ dat$time, xlim = c(2,20), pch = 19, col = "black", type = "o")
 
-  plot(dat$inc.city ~ dat$time, xlim = c(2,30), pch = 19, col = "grey", type = "o")
-  points(dat$inc.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  plot(dat$inc.city ~ dat$time, xlim = c(2,20), pch = 19, col = "black", type = "o")
+  points(dat$inc.farmer ~ dat$time, xlim = c(2,20), pch = 19, col = "blue", type = "o")
 
-  plot(dat$satiety.city ~ dat$time, xlim = c(2,30), ylim = c(0,1), pch = 19, col = "grey", type = "o")
-  points(dat$satiety.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
+  plot(dat$satiety.city ~ dat$time, xlim = c(2,20), ylim = c(0,1), pch = 19, col = "black", type = "o")
+  points(dat$satiety.farmer ~ dat$time, xlim = c(2,20), pch = 19, col = "blue", type = "o")
 
-  plot(dat$hdi.city ~ dat$time, xlim = c(2,30), ylim = c(0,1), pch = 19, col = "grey", type = "o")
-  points(dat$hdi.farmer ~ dat$time, xlim = c(2,30), pch = 19, col = "lightgreen", type = "o")
-  points(dat$polit.popularity ~ dat$time, xlim = c(2,30), pch = 19, col = "red", type = "o")
+  plot(dat$hdi.city ~ dat$time, xlim = c(2,20), ylim = c(0,1), pch = 19, col = "black", type = "o")
+  points(dat$hdi.farmer ~ dat$time, xlim = c(2,20), pch = 19, col = "blue", type = "o")
+  points(dat$polit.popularity ~ dat$time, xlim = c(2,20), pch = 19, col = "red", type = "o")
 }
 
-
-# TODO: code disasters wth 10 round lag proportional to forest area
+# TODO: Introduce health/ climate consequences for increased industry levels.
