@@ -159,13 +159,12 @@ for (t in 2:Ts) {
   layout(rbind(c(1, 1, 2, 3), c(4, 4, 5, 6), c(7, 8, 9, 10), c(11, 12, 13, 14)))
   par(cex.lab = 1.2, cex = 1.2)
   par(mar = c(2,2,2,2))
-  world = matrix(data = rep(c(1, 2, 3, 4), c(round(A.forest), round(A.farm), round(A.city), round(A.ind))),
-                 nrow = 30,
-                 byrow = F)
+
+  world = matrix(data = rep(rep(c(1, 2, 3, 4), c(round(A.forest), round(A.farm), round(A.city), round(A.ind))), each = 30), nrow = 30)
   b = (which(diff(c(-1,world[1,],10)) > 0)) - 1
   image(t(world), xaxt = "n", yaxt = "n", main = "World Area",
         col = c("green4", "lightgreen", "grey", "red"))
-  axis(side = 1, at = (b[-length(b)] + diff(b)/2)/20, labels = c("Forest", "Farm", "City", "Ind"))
+  axis(side = 1, at = c(A.forest/2, (A.farm/2) + A.forest, (A.city/2) + A.farm + A.forest, A.tot - (A.ind/2))/A.tot , labels = c("Forest", "Farm", "City", "Ind"))
 
   plotArrow = function(x,y,value){
     if (value < 0) {
@@ -214,7 +213,7 @@ for (t in 2:Ts) {
   price_change = (dat$price.food[nrow(dat)] - dat$price.food[nrow(dat) - 1])/dat$price.food[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 95, price_change)
 
-  barplot(rbind(c(inc.city, inc.farmer), c(cost.city, invest.farmer)), main = "Income", names.arg = c("city", "farm"), ylim = c(0, 8000), col = c("black","blue"))
+  barplot(rbind(c(inc.city, inc.farmer), c(cost.city, invest.farmer)), main = "Income", names.arg = c("city", "farm"), ylim = c(0, 8000), col = c("black","grey"))
   inc_citychange = (dat$inc.city[nrow(dat)] - dat$inc.city[nrow(dat) - 1])/dat$inc.city[nrow(dat) - 1]*100
   inc_farmchange = (dat$inc.farmer[nrow(dat)] - dat$inc.farmer[nrow(dat) - 1])/dat$inc.farmer[nrow(dat) - 1]*100
   plotArrow(x = 0.7, y = 7000, inc_citychange)
